@@ -2,7 +2,6 @@
 
 ## 🛠️ Tech Stack
 - **Backend:** Java, Spring Boot
-- **Authentication:** JWT-based authentication
 - **Database:** MongoDB
 
 ## 🖥️ Live Demo
