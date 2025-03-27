@@ -31,6 +31,11 @@ public class ResumeController {
     @Autowired
     private ExtractMessage extractMessage;
 
+
+    @GetMapping("/check")
+    public ResponseEntity<String> check(){
+        return new ResponseEntity<>("Successful", HttpStatus.OK);
+    }
     @PostMapping("/upload")
     public ResponseEntity<?> uploadResume(@RequestParam("file") MultipartFile resumeFile, @RequestPart("jd") String jobDescription) {
         try {
