@@ -76,32 +76,35 @@ public class ResumeServices {
                 "   - Include ALL relevant skills from the resume that match job requirements\n" +
                 "   - Add implied skills based on work experience (e.g., if managed a team, add \"Team Leadership\")\n" +
                 "   - Include industry-standard tools/technologies mentioned in JD if resume shows relevant experience\n" +
-                "   - Maximum 12 skills\n" +
+                "   - Categorize the skills into 4-5 categories and each category should not contain more than 5 skills " +
+                "   - Maximum 20 skills in total\n" +
                 "   - Prioritize technical skills specific to the role\n" +
                 "\n" +
                 "2. Project Enhancement:\n" +
-                "        - Rewrite project descriptions to highlight aspects most relevant to the target role\n" +
+                "   - Rewrite project descriptions to highlight aspects most relevant to the target role\n" +
                 "   - Add technical complexity and scale details based on project context\n" +
                 "   - Emphasize outcomes and business impact\n" +
                 "   - Include relevant methodologies and best practices from the job description\n" +
                 "   - Maximum 4 projects\n" +
+                "   - 30 to 35 words description" +
                 "\n" +
                 "3. Work Experience Enhancement:\n" +
                 " if resume doesn't contain work experience add null, else do the below mentioned things"+
-                "    - Align responsibility descriptions with job requirements\n" +
+                "   - Align responsibility descriptions with job requirements\n" +
                 "   - Add industry-specific terminology from the job description\n" +
+                "   - 30 to 35 words description" +
                 "   - Incorporate quantifiable metrics where logical\n" +
                 "   - Highlight leadership and collaboration aspects if relevant to the role\n" +
-                "   - Maximum 2-3 responsibilities per role\n" +
+                "   - Maximum 2-3 responsibilities per role each of 10-12 words maximum\n" +
                 "\n" +
                 "4. Objective Statement Customization:\n" +
                 "    - Craft objective statement using key terms from job description\n" +
                 "   - Include target role title and top 2-3 required qualifications\n" +
                 "   - Mention relevant certifications or specialized knowledge\n" +
-                "   - 40 to 50 words\n" +
+                "   - 30 to 35 words\n" +
                 "\n" +
                 "5. Achievements Enhancement:\n" +
-                "        - Focus on achievements that demonstrate required job competencies\n" +
+                "   - Focus on achievements that demonstrate required job competencies\n" +
                 "   - Add relevant metrics and scale indicators\n" +
                 "   - Use industry-specific terminology from the job description\n" +
                 "   - Maximum 4 achievements (increased from 2-3)\n" +
@@ -135,7 +138,14 @@ public class ResumeServices {
                 "    \"linkedin\": string | null\n" +
                 "  },\n" +
                 "  \"objective\": string,\n" +
-                "  \"skills\": string[],\n" +
+                "{\n" +
+                "  \"skillsByCategory\": {\n" +
+                "    \"Category One\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
+                "    \"Category Two\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
+                "    \"Category Three\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
+                "    \"Category Four\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
+                "  }\n" +
+                "}" +
                 "  \"projects\": [\n" +
                 "    {\n" +
                 "      \"title\": string,\n" +
@@ -162,6 +172,7 @@ public class ResumeServices {
                 "    \"cgpa\": number | null\n" +
                 "  },\n" +
                 "  \"achievements\": string[]\n" +
+                "  certificates : [\"certificate name - date\", \"certificate name - date\"]" +
                 "}\n" +
                 "\n" +
                 "### Response Requirements\n" +
