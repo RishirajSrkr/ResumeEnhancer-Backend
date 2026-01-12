@@ -7,39 +7,38 @@ import org.springframework.stereotype.Service;
 @Service
 public class ExtractMessage {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     public String extractMessage(String jsonResponse) {
         try {
-            // Parse the JSON response
-            ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(jsonResponse);
 
-            // Navigate to the content field
-            JsonNode messageNode = rootNode
-                    .path("candidates").get(0)
+            // ✅ Groq / OpenAI compatible path
+            String content = rootNode
+                    .path("choices")
+                    .get(0)
+                    .path("message")
                     .path("content")
-                    .path("parts").get(0)
-                    .path("text");
+                    .asText();
 
-            // Return the message content as a String
-            String text = messageNode.asText();
-            int start = 0;
-            int end = text.length();
-            for(int i = 0; i <text.length(); i++){
-                char ch = text.charAt(i);
-                if(ch == '{') break;
-                else start ++;
-            }
-            for(int i = text.length()-1; i >= 0; i--){
-                char ch = text.charAt(i);
-                if(ch == '}') break;
-                else end --;
+            // ✅ Remove markdown fences if present
+            content = content
+                    .replace("```json", "")
+                    .replace("```", "")
+                    .trim();
+
+            // ✅ Extract pure JSON safely
+            int start = content.indexOf('{');
+            int end = content.lastIndexOf('}');
+
+            if (start == -1 || end == -1 || start >= end) {
+                throw new RuntimeException("No valid JSON found in LLM response");
             }
 
-            return text.substring(start, end);
+            return content.substring(start, end + 1);
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to extract message from response", e);
+            throw new RuntimeException("Failed to extract message from Groq response", e);
         }
     }
-
 }

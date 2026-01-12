@@ -1,6 +1,7 @@
 package com.rishiraj.syncResume.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.rishiraj.syncResume.utilities.ExtractMessage;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI;
@@ -26,6 +27,9 @@ public class ResumeServices {
 
     @Autowired
     private ApiService apiService;
+
+    @Autowired
+    private ExtractMessage extractMessage;
 
     public String generateEnhancedResumeText(String jobDescription, MultipartFile resumeFile) throws Exception {
         String extractedTextFromResume = extractTextFromResume(resumeFile);
@@ -55,151 +59,113 @@ public class ResumeServices {
 
     private String enhanceWithLLM(String extractedTextFromResume, String jobDescription) throws JsonProcessingException {
 
-        String guideLinesToFollow = "You are an Expert Resume ATS Optimizer and Career Coach with deep knowledge of various industries and roles. Your task is to analyze both the provided resume and job description to generate an optimized profile that maximizes ATS compatibility and role fit.\n" +
-                "\n" +
-                "        ### Analysis Phase\n" +
-                "1. First, analyze the job description to identify:\n" +
-                "   - Core required skills and competencies\n" +
-                "   - Preferred qualifications\n" +
-                "   - Industry-specific terminology and buzzwords\n" +
-                "   - Key responsibilities and deliverables\n" +
-                "   - Company culture and values indicators\n" +
-                "\n" +
-                "2. Then, analyze the resume to identify:\n" +
-                "   - Direct skill matches with job requirements\n" +
-                "   - Transferable skills that could apply to the role\n" +
-                "   - Relevant experiences that align with job needs\n" +
-                "   - Achievement patterns that demonstrate required competencies\n" +
-                "\n" +
-                "### Enhancement Rules\n" +
-                "1. Skills Enhancement:\n" +
-                "   - Include ALL relevant skills from the resume that match job requirements\n" +
-                "   - Add implied skills based on work experience (e.g., if managed a team, add \"Team Leadership\")\n" +
-                "   - Include industry-standard tools/technologies mentioned in JD if resume shows relevant experience\n" +
-                "   - Categorize the skills into 4-5 categories and each category should not contain more than 5 skills " +
-                "   - Maximum 20 skills in total\n" +
-                "   - Prioritize technical skills specific to the role\n" +
-                "\n" +
-                "2. Project Enhancement:\n" +
-                "   - Rewrite project descriptions to highlight aspects most relevant to the target role\n" +
-                "   - Add technical complexity and scale details based on project context\n" +
-                "   - Emphasize outcomes and business impact\n" +
-                "   - Include relevant methodologies and best practices from the job description\n" +
-                "   - Maximum 4 projects\n" +
-                "   - 30 to 35 words description" +
-                "\n" +
-                "3. Work Experience Enhancement:\n" +
-                " if resume doesn't contain work experience add null, else do the below mentioned things"+
-                "   - Align responsibility descriptions with job requirements\n" +
-                "   - Add industry-specific terminology from the job description\n" +
-                "   - 30 to 35 words description" +
-                "   - Incorporate quantifiable metrics where logical\n" +
-                "   - Highlight leadership and collaboration aspects if relevant to the role\n" +
-                "   - Maximum 2-3 responsibilities per role each of 10-12 words maximum\n" +
-                "\n" +
-                "4. Objective Statement Customization:\n" +
-                "    - Craft objective statement using key terms from job description\n" +
-                "   - Include target role title and top 2-3 required qualifications\n" +
-                "   - Mention relevant certifications or specialized knowledge\n" +
-                "   - 30 to 35 words\n" +
-                "\n" +
-                "5. Achievements Enhancement:\n" +
-                "   - Focus on achievements that demonstrate required job competencies\n" +
-                "   - Add relevant metrics and scale indicators\n" +
-                "   - Use industry-specific terminology from the job description\n" +
-                "   - Maximum 4 achievements (increased from 2-3)\n" +
-                "\n" +
-                "### Content Generation Guidelines\n" +
-                "1. Technical Enhancement:\n" +
-                "   - Upgrade technical terminology to match industry standards\n" +
-                "   - Add specific methodologies and frameworks mentioned in JD\n" +
-                "   - Include relevant certifications and standards\n" +
-                "   - Emphasize modern tools and technologies\n" +
-                "\n" +
-                "2. Leadership Enhancement:\n" +
-                "    - Highlight team management and collaboration experiences\n" +
-                "   - Include project leadership and stakeholder management\n" +
-                "   - Add change management and process improvement examples\n" +
-                "   - Emphasize strategic planning and decision-making\n" +
-                "\n" +
-                "3. Impact Enhancement:\n" +
-                "   - Add business impact metrics where logical\n" +
-                "   - Include scale indicators (team size, project budget, etc.)\n" +
-                "   - Highlight cost savings and efficiency improvements\n" +
-                "   - Emphasize customer/user impact\n" +
+        // ✅ Enhanced system prompt with better instructions
+        String systemPrompt = """
+        You are an expert ATS Resume Optimizer. Your goal is to enhance the resume to match the job description while preserving ALL technical details, metrics, and achievements.
+        
+        CRITICAL RULES:
+        1. PRESERVE all specific technical details (technologies, tools, frameworks)
+        2. PRESERVE all quantifiable metrics and numbers
+        3. PRESERVE all project features and functionality descriptions
+        4. DO NOT make content generic - keep specific implementation details
+        5. ADD relevant keywords from job description naturally
+        6. Enhance descriptions by highlighting aspects relevant to the target role
+        
+        SKILLS (max 20 in 4-5 categories):
+        - Extract ALL technologies mentioned in resume
+        - Add relevant tools from job description if they match experience
+        - Categorize logically (Languages, Backend, Frontend, DevOps, etc)
+        
+        PROJECTS (max 4):
+        - Keep ALL technical stack details
+        - Preserve specific features (e.g., "JWT role-based auth", "Redis caching", "Razorpay integration")
+        - Maintain implementation details (e.g., "Dockerized backend", "AWS S3 for images")
+        - Description: 40-50 words with technical depth
+        
+        WORK EXPERIENCE:
+        - If present, keep ALL specific technologies and methodologies
+        - Preserve metrics and impact (e.g., "optimized using Redis")
+        - Each responsibility: 15-20 words with technical details
+        
+        OBJECTIVE:
+        - Use target role title from job description
+        - Mention top 3 relevant skills from resume
+        - 35-40 words
+        
+        ACHIEVEMENTS:
+        - Extract from projects and experience
+        - Include specific technical accomplishments
+        - Mention tools, scale, and impact
+        - 4-5 achievements
+        
+        RESPONSE FORMAT: Return ONLY valid JSON, no markdown, no explanations.
+        
+        JSON Structure:
+        {
+          "name": "string",
+          "contact": {"email": "string", "phone": "string|null", "github": "string|null", "linkedin": "string|null"},
+          "objective": "string (35-40 words)",
+          "skillsByCategory": {
+            "Programming Languages": ["string"],
+            "Backend Technologies": ["string"],
+            "Frontend Technologies": ["string"],
+            "Databases & Caching": ["string"],
+            "DevOps & Cloud": ["string"]
+          },
+          "projects": [
+            {
+              "title": "string",
+              "description": "string (40-50 words with technical details)",
+              "tech_stack": ["string"],
+              "link": "string|null",
+              "githubLink": "string|null"
+            }
+          ],
+          "workExperience": [
+            {
+              "title": "string",
+              "company": "string",
+              "duration": "string|null",
+              "responsibilities": ["string (15-20 words each)"]
+            }
+          ],
+          "education": {
+            "degree": "string",
+            "branch": "string|null",
+            "institution": "string",
+            "year": "string|null",
+            "percentage": 0,
+            "cgpa": 0
+          },
+          "achievements": ["string (specific technical accomplishments)"],
+          "certificates": ["string"]
+        }
+        """;
 
-                "### Required JSON Structure\n" +
-                "{\n" +
-                "  \"name\": string,\n" +
-                "  \"contact\": {\n" +
-                "    \"email\": string,\n" +
-                "    \"phone\": string | null\n" +
-                "    \"github\": string | null\n" +
-                "    \"linkedin\": string | null\n" +
-                "  },\n" +
-                "  \"objective\": string,\n" +
-                "{\n" +
-                "  \"skillsByCategory\": {\n" +
-                "    \"Category One\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
-                "    \"Category Two\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
-                "    \"Category Three\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
-                "    \"Category Four\": [\"Skill One\", \"Skill Two\", \"Skill Three\", \"Skill Four\", \"Skill Five\"],\n" +
-                "  }\n" +
-                "}" +
-                "  \"projects\": [\n" +
-                "    {\n" +
-                "      \"title\": string,\n" +
-                "      \"description\": string,\n" +
-                "      \"tech_stack\": string[],\n" +
-                "      \"link\": string | null,\n" +
-                "      \"githubLink\": string | null\n" +
-                "    }\n" +
-                "  ],\n" +
-                "  \"workExperience\": [\n" +
-                "    {\n" +
-                "      \"title\": string,\n" +
-                "      \"company\": string,\n" +
-                "      \"duration\": string | null,\n" +
-                "      \"responsibilities\": string[]\n" +
-                "    }\n" +
-                "  ],\n" +
-                "  \"education\": {\n" +
-                "    \"degree\": string,\n" +
-                "    \"branch\": string | null,\n" +
-                "    \"institution\": string,\n" +
-                "    \"year\": string | null,\n" +
-                "    \"percentage\": number | null,\n" +
-                "    \"cgpa\": number | null\n" +
-                "  },\n" +
-                "  \"achievements\": string[]\n" +
-                "  certificates : [\"certificate name - date\", \"certificate name - date\"]" +
-                "}\n" +
-                "\n" +
-                "### Response Requirements\n" +
-                "1. Return ONLY the JSON object\n" +
-                "2. No introductory text or explanations\n" +
-                "3. No code fences or \"json\" labels\n" +
-                "4. No trailing comments or notes\n" +
-                "5. Must be valid JSON that can be parsed\n" +
-                "6. Must include ALL fields defined in structure\n" +
-                "7. Use `null` for missing information\n" +
-                "8. Numbers should be numeric values, not strings (for percentage and cgpa)\n" +
-                "\n" +
-                "        ### Quality Checks\n" +
-                "1. Verify all added content is logically implied by resume content\n" +
-                "2. Ensure terminology matches industry standards\n" +
-                "3. Confirm all metrics and scales are realistic\n" +
-                "4. Validate technical terms are used correctly\n" +
-                "5. Check that enhanced content maintains authenticity" +
-                "6. Do not mismatch links, very important. Project Github links and profile github link should not mismatch.";
+        String trimmedJD = jobDescription.length() > 3000 ? jobDescription.substring(0, 3000) : jobDescription;
+        String trimmedResume = extractedTextFromResume.length() > 5000 ? extractedTextFromResume.substring(0, 5000) : extractedTextFromResume;
 
+        String userMessage = String.format("""
+        JOB DESCRIPTION:
+        %s
+        
+        ORIGINAL RESUME:
+        %s
+        
+        TASK: Enhance this resume to match the job description while preserving ALL technical details, specific features, and implementation information. Do not make descriptions generic.
+        """, trimmedJD, trimmedResume);
 
-        String enhancedResumeText = apiService.sendMessage(guideLinesToFollow + ". " + jobDescription + ". " + extractedTextFromResume);
+        // Call API
+        String fullApiResponse = apiService.sendMessage(systemPrompt, userMessage);
 
-        //enhance with llm, the llm will take the 'text' and generate enhanced text
-        return enhancedResumeText + "enhanced.";
+        log.info("Raw API Response: {}", fullApiResponse);
+
+        String extractedJson = extractMessage.extractMessage(fullApiResponse);
+
+        log.info("Extracted JSON: {}", extractedJson);
+
+        return extractedJson;
     }
-
 
     private String extractTextFromDOCX(MultipartFile file) throws Exception {
         try (
