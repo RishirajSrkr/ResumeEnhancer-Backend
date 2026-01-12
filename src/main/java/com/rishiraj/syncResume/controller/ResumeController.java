@@ -21,7 +21,6 @@ import java.io.IOException;
 
 @RestController
 @CrossOrigin("*")
-
 @RequestMapping("/api/resume")
 public class ResumeController {
     private static final Logger log = LoggerFactory.getLogger(ResumeController.class);

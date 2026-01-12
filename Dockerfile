@@ -1,24 +1,23 @@
-# Use the official JDK 21 slim image from the Docker Hub
-FROM openjdk:21-jdk-slim
+# -------- STAGE 1: BUILD --------
+FROM eclipse-temurin:21-jdk-jammy AS builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Install Maven
-RUN apt-get update && apt-get install -y maven && apt-get clean
+RUN apt-get update && apt-get install -y maven
 
-# Copy the pom.xml and download dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline
 
-# Copy the entire project
 COPY . .
-
-# Package the application
 RUN mvn clean package -DskipTests
 
-# Expose the port the app runs on
+# -------- STAGE 2: RUN --------
+FROM eclipse-temurin:21-jre-jammy
+
+WORKDIR /app
+
+COPY --from=builder /app/target/syncResume-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8080
 
-# Command to run the application.
-CMD ["java", "-jar", "target/syncResume-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "app.jar"]
