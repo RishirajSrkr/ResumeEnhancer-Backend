@@ -7,36 +7,35 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
 import java.util.Map;
 
 @Service
 public class ApiService {
 
     private static final Logger log = LoggerFactory.getLogger(ApiService.class);
-    @Value("${gemini.api.url}")
-    private String geminiApiUrl;
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
+    
+    @Value("${groq.api.key}")
+    private String groqApiKey;
 
     private final WebClient webClient;
 
     public ApiService(WebClient.Builder webClient) {
-        this.webClient = webClient.build();;
+        this.webClient = webClient.build();
     }
 
     public String sendMessage(String prompt) throws JsonProcessingException {
 
-
-        Map<String, Object> requestBody = Map.of("contents", new Object[]{
-                Map.of("parts", new Object[]{
-                        Map.of("text", prompt)
-                })
-        });
+        Map<String, Object> requestBody = Map.of(
+            "model", "llama-3.3-70b-versatile",
+            "messages", new Object[]{
+                Map.of("role", "user", "content", prompt)
+            }
+        );
 
         String response = webClient.post()
-                .uri(geminiApiUrl + geminiApiKey)
+                .uri("https://api.groq.com/openai/v1/chat/completions")
                 .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + groqApiKey)
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
@@ -44,7 +43,4 @@ public class ApiService {
 
         return response;
     }
-
-
-
 }
